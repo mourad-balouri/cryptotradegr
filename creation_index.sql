@@ -126,6 +126,78 @@ INCLUDE (action, table_cible, audit_id);
 CREATE INDEX idx_audit_trail_details_gin
 ON audit_trail USING GIN (to_tsvector('simple', details));
 
+--- les index sur les tables ref :
+set search_path = public;
+
+--- table utilisateur :
+
+---Login, vérifications unicité B-tree (lookup & filtres)
+CREATE INDEX idx_user_email
+ON tbl_utilisateur (email);
+---Sécurité, filtrage rapide Partial index (utilisateurs actifs)
+CREATE INDEX idx_user_actif
+ON tbl_utilisateur (utili_id)
+WHERE statut_utilis = 'ACTIF';
+--- Index-only scan possible Covering index (monitoring / audit)
+CREATE INDEX idx_user_covering
+ON tbl_utilisateur (utili_id)
+INCLUDE (email, statut_utilis);
+
+
+
+--- table cryptomonnaie :
+
+--- B-tree (symbol lookup)
+CREATE INDEX idx_crypto_symbole
+ON tbl_cryptomonais (symbole);
+--- Partial index (cryptos actives)
+CREATE INDEX idx_crypto_active
+ON tbl_cryptomonais (crypt_id)
+WHERE statut_crypt = 'ACTIVE';
+
+
+--- table prortefeuilles :
+
+--- B-tree (accès solde utilisateur)
+CREATE INDEX idx_portefeuille_utili
+ON tbl_portfeuilles (utili_id);
+--- Covering index (solde instantané)
+CREATE INDEX idx_wallet_covering
+ON tbl_portfeuilles (utili_id, crypto_id)
+INCLUDE (solde_total, solde_bloque);
+--- Partial index (solde non nul)
+CREATE INDEX idx_wallet_non_zero
+ON tbl_portfeuilles (utili_id)
+WHERE solde_total > 0;
+
+
+--- table pair_trade :
+
+--- B-tree (jointures)
+CREATE INDEX idx_pair_base_contre
+ON pair_trading (crypto_base, crypto_contre);
+--- Partial index (paires actives)
+CREATE INDEX idx_pair_active
+ON pair_trading (crypto_base, crypto_contre)
+WHERE pair_statut = 'ACTIVE';
+
+
+--- table statique_marché :
+
+--- B-tree (indicateurs)
+CREATE INDEX idx_stats_pair_indicateur
+ON statique_marché (paire_id, indicateur);
+
+
+
+--- table detection_anomalies :
+
+--- B-tree (investigations)
+CREATE INDEX idx_anomalies_user
+ON detection_anomalies (utili_id, date_detection DESC);
+
+
+
 
  
 
