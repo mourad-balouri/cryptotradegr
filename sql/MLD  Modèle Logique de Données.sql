@@ -73,7 +73,7 @@ CREATE TABLE trades (
 ) PARTITION BY RANGE (date_execution);
 
 CREATE TABLE trades_2025_12 PARTITION OF trades
-  FOR VALUES FROM ('2025-12-01') TO ('2026-01-01');
+  FOR VALUES FROM ('2025-12-01') TO ('2026-01-01');--
 
 -- Index
 CREATE INDEX idx_trades_ordre ON trades(ordre_id);
